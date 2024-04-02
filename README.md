@@ -8,6 +8,14 @@ This Python script is designed to process images, detect faces, and crop them fo
 2. Run the script `main.py`.
 3. Processed images with detected faces will be saved in the `output` folder.
 
+The script supports the following file types for image processing:
+
+- .jpg
+- .jpeg
+- .png
+- .bmp
+- .heic
+
 ## Requirements
 
 - Python 3.x
