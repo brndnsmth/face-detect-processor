@@ -30,6 +30,7 @@ The script supports the following file types for image processing:
 
 ```
 git clone https://github.com/brndnsmth/face-detect-processor.git
+cd face-detect-processor
 ```
 
 2. **Create a Virtual Environment:** Utilize Python 3 to create a virtual environment for this project. This step ensures a clean and isolated environment for installing dependencies.
