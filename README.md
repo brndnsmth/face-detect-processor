@@ -54,7 +54,7 @@ pip install -r requirements.txt
 5. **Add Images:** Create `input` folder and add images to directory.
 
 ```
-touch input
+mkdir input
 ```
 
 6. **Run the Script:** Execute the following command to run the script:
