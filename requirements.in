@@ -1,4 +1,4 @@
 pip-tools
 opencv-python
 pillow
-pyheif
+pillow-heif

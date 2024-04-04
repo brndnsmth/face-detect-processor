@@ -1,8 +1,11 @@
 import os
 import cv2
-import pyheif
+import shutil
 import tempfile
 from PIL import Image
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 
 # Function to detect faces in an image
@@ -23,19 +26,12 @@ def detect_faces(image):
     return faces
 
 
-# Function to convert HEIC image to JPG
+# Function to convert HEIC image to JPG using pillow-heif
 def convert_heic_to_jpg(heic_path, jpg_path):
     try:
-        heif_file = pyheif.read(heic_path)
-        image = Image.frombytes(
-            heif_file.mode,
-            heif_file.size,
-            heif_file.data,
-            "raw",
-            heif_file.mode,
-            heif_file.stride,
-        )
-        image.save(jpg_path, "JPEG")
+        image = Image.open(heic_path)
+        image = image.convert("RGB")
+        image.save(jpg_path, format="JPEG")
         return True
     except Exception as e:
         print(f"Error converting HEIC to JPG: {e}")
@@ -71,6 +67,11 @@ def process_images(input_folder, output_folder):
             input_path = os.path.join(input_folder, filename)
 
             try:
+                # Check file size before conversion
+                if os.path.getsize(input_path) == 0:
+                    print(f"Skipping processing of '{filename}': File size is 0.")
+                    continue
+
                 # Convert HEIC to JPEG
                 if filename.lower().endswith(".heic"):
                     # Create a temporary directory for conversion

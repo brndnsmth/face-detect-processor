@@ -6,8 +6,6 @@
 #
 build==1.2.1
     # via pip-tools
-cffi==1.16.0
-    # via pyheif
 click==8.1.7
     # via pip-tools
 numpy==1.26.4
@@ -17,12 +15,12 @@ opencv-python==4.9.0.80
 packaging==24.0
     # via build
 pillow==10.3.0
+    # via
+    #   -r requirements.in
+    #   pillow-heif
+pillow-heif==0.16.0
     # via -r requirements.in
 pip-tools==7.4.1
-    # via -r requirements.in
-pycparser==2.22
-    # via cffi
-pyheif==0.7.1
     # via -r requirements.in
 pyproject-hooks==1.0.0
     # via
