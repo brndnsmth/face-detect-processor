@@ -160,5 +160,5 @@ cython_debug/
 #.idea/
 
 # Input and Output Folder
-input/
-output/
+input*
+output*

@@ -1,7 +1,6 @@
 import os
 import cv2
 import pyheif
-import shutil
 import tempfile
 from PIL import Image
 
@@ -26,16 +25,34 @@ def detect_faces(image):
 
 # Function to convert HEIC image to JPG
 def convert_heic_to_jpg(heic_path, jpg_path):
-    heif_file = pyheif.read(heic_path)
-    image = Image.frombytes(
-        heif_file.mode,
-        heif_file.size,
-        heif_file.data,
-        "raw",
-        heif_file.mode,
-        heif_file.stride,
-    )
-    image.save(jpg_path, "JPEG")
+    try:
+        heif_file = pyheif.read(heic_path)
+        image = Image.frombytes(
+            heif_file.mode,
+            heif_file.size,
+            heif_file.data,
+            "raw",
+            heif_file.mode,
+            heif_file.stride,
+        )
+        image.save(jpg_path, "JPEG")
+        return True
+    except Exception as e:
+        print(f"Error converting HEIC to JPG: {e}")
+        return False
+
+
+# Function to convert image to JPEG format
+def convert_to_jpg(image_path, jpg_path):
+    try:
+        image = cv2.imread(image_path)
+        if image is None:
+            raise Exception("Failed to read image")
+        cv2.imwrite(jpg_path, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        return True
+    except Exception as e:
+        print(f"Error converting image to JPEG: {e}")
+        return False
 
 
 # Function to process images in the input folder
@@ -49,41 +66,69 @@ def process_images(input_folder, output_folder):
 
     # Process each image in the input folder
     for filename in os.listdir(input_folder):
-        if filename.endswith((".jpg", ".jpeg", ".png", ".bmp", ".heic")):
+        if filename.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".heic")):
             num_processed_images += 1
-
             input_path = os.path.join(input_folder, filename)
 
-            # Convert HEIC to JPG
-            if filename.endswith(".heic"):
-                # Create a temporary directory for conversion
-                temp_dir = tempfile.mkdtemp()
+            try:
+                # Convert HEIC to JPEG
+                if filename.lower().endswith(".heic"):
+                    # Create a temporary directory for conversion
+                    temp_dir = tempfile.mkdtemp()
+                    if not os.path.exists(temp_dir):
+                        print(
+                            f"Error creating temporary directory for HEIC conversion."
+                        )
+                        continue  # Skip processing if temp directory creation fails
+                    temp_jpg_path = os.path.join(
+                        temp_dir, f"{os.path.splitext(filename)[0]}.jpg"
+                    )
+                    success = convert_heic_to_jpg(input_path, temp_jpg_path)
+                    if not success:
+                        print(
+                            f"Skipping processing of '{filename}' due to conversion error."
+                        )
+                        shutil.rmtree(temp_dir)
+                        continue  # Skip processing if conversion failed
+                    input_path = temp_jpg_path
+
+                # Convert image to JPEG
                 temp_jpg_path = os.path.join(
-                    temp_dir, os.path.splitext(filename)[0] + ".jpg"
+                    tempfile.gettempdir(), f"{os.path.splitext(filename)[0]}.jpg"
                 )
-                convert_heic_to_jpg(input_path, temp_jpg_path)
-                input_path = temp_jpg_path
+                success = convert_to_jpg(input_path, temp_jpg_path)
+                if not success:
+                    print(
+                        f"Skipping processing of '{filename}' due to conversion error."
+                    )
+                    continue  # Skip processing if conversion failed
 
-            # Read the image
-            image = cv2.imread(input_path)
+                # Read the JPEG image
+                image = cv2.imread(temp_jpg_path)
+                if image is None:
+                    print(f"Error reading JPEG image '{filename}'")
+                    continue  # Skip processing if image read failed
 
-            # Detect faces in the image
-            faces = detect_faces(image)
+                # Detect faces in the image
+                faces = detect_faces(image)
+                if len(faces) == 0:
+                    print(f"No faces detected in image '{filename}'")
+                    continue  # Skip processing if no faces detected
 
-            for i, (x, y, w, h) in enumerate(faces):
-                # Crop the face to 512x512
-                face_crop = image[y : y + h, x : x + w]
-                face_crop = cv2.resize(face_crop, (512, 512))
+                # Process each detected face
+                for i, (x, y, w, h) in enumerate(faces):
+                    # Crop the face to 512x512
+                    face_crop = image[y : y + h, x : x + w]
+                    face_crop = cv2.resize(face_crop, (512, 512))
 
-                # Save the cropped face image to the root of the output directory
-                output_face_path = os.path.join(
-                    output_folder, f"{os.path.splitext(filename)[0]}_{i}.jpg"
-                )
-                cv2.imwrite(output_face_path, face_crop)
+                    # Save the cropped face image to the output folder
+                    output_face_path = os.path.join(
+                        output_folder, f"{os.path.splitext(filename)[0]}_{i}.jpg"
+                    )
+                    cv2.imwrite(output_face_path, face_crop)
 
-            # If HEIC file was converted, delete temporary directory
-            if filename.endswith(".heic"):
-                shutil.rmtree(temp_dir)
+            except Exception as e:
+                print(f"Error processing image '{filename}': {e}")
 
     print(f"Processed {num_processed_images} images.")
 
